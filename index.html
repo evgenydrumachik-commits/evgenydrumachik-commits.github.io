@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Калькулятор BARF для Поршика</title>
+  <style>
+    :root {
+      --bg: #f6f4ef;
+      --surface: #fffefa;
+      --surface-strong: #ffffff;
+      --text: #25221d;
+      --muted: #6e675c;
+      --border: #ded8cc;
+      --accent: #b8543d;
+      --accent-strong: #8f3626;
+      --accent-soft: #fff0ea;
+      --green: #3d7157;
+      --green-soft: #edf7f1;
+      --blue: #426a89;
+      --blue-soft: #eef6fb;
+      --warning: #8b651e;
+      --warning-soft: #fff7df;
+      --shadow: 0 18px 48px rgba(52, 43, 31, 0.08);
+      --radius: 8px;
+      --radius-sm: 6px;
+      --max-width: 1180px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(135deg, rgba(184, 84, 61, 0.08), transparent 34%),
+        linear-gradient(220deg, rgba(61, 113, 87, 0.08), transparent 32%),
+        var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .page {
+      width: min(100% - 28px, var(--max-width));
+      margin: 0 auto;
+      padding: 28px 0 44px;
+    }
+
+    .header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      align-items: end;
+      margin-bottom: 24px;
+    }
+
+    .title-block h1 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 4rem);
+      line-height: 1.02;
+      letter-spacing: 0;
+      color: var(--text);
+    }
+
+    .title-block p {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: clamp(1rem, 2vw, 1.2rem);
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: center;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(255, 254, 250, 0.82);
+      box-shadow: var(--shadow);
+      color: var(--accent-strong);
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 390px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel,
+    .card,
+    .note,
+    .chart-panel,
+    .table-panel,
+    .formula-panel,
+    .transition-panel,
+    .benchmark-panel {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(255, 254, 250, 0.9);
+      box-shadow: var(--shadow);
+    }
+
+    .panel {
+      position: sticky;
+      top: 16px;
+      padding: 18px;
+    }
+
+    .panel h2,
+    .section-title {
+      margin: 0 0 14px;
+      font-size: 1.04rem;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .control {
+      display: grid;
+      gap: 9px;
+      padding: 14px 0;
+      border-top: 1px solid rgba(222, 216, 204, 0.72);
+    }
+
+    .control:first-of-type {
+      border-top: 0;
+      padding-top: 2px;
+    }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    label,
+    .label {
+      color: var(--muted);
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .unit-input {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      min-width: 128px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface-strong);
+      overflow: hidden;
+    }
+
+    .unit-input input {
+      width: 100%;
+      min-width: 0;
+      border: 0;
+      padding: 10px 10px;
+      color: var(--text);
+      background: transparent;
+      font-weight: 800;
+      outline: none;
+    }
+
+    .unit-input span {
+      padding-right: 10px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .range-labels {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .control-hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .segmented {
+      display: grid;
+      gap: 8px;
+    }
+
+    .phase-option,
+    .meal-option {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .phase-option input,
+    .meal-option input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .phase-option span,
+    .meal-option span {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface-strong);
+      color: var(--text);
+      font-size: 0.93rem;
+      font-weight: 800;
+      text-align: center;
+      transition: border-color 160ms ease, background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .phase-option input:checked + span,
+    .meal-option input:checked + span {
+      border-color: rgba(184, 84, 61, 0.45);
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+      box-shadow: inset 0 0 0 1px rgba(184, 84, 61, 0.12);
+    }
+
+    .phase-option input:focus-visible + span,
+    .meal-option input:focus-visible + span,
+    .unit-input:focus-within {
+      outline: 3px solid rgba(184, 84, 61, 0.22);
+      outline-offset: 2px;
+    }
+
+    .meal-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(130px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .card {
+      min-height: 132px;
+      padding: 16px;
+      display: grid;
+      align-content: space-between;
+      gap: 12px;
+    }
+
+    .card .card-label {
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 800;
+    }
+
+    .card .card-value {
+      color: var(--text);
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+      flex-wrap: nowrap;
+      font-size: clamp(1.48rem, 2.8vw, 2.1rem);
+      line-height: 1;
+      font-weight: 900;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    .card .card-value .suffix {
+      font-size: 0.52em;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .card .card-note {
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .accent-card {
+      border-color: rgba(184, 84, 61, 0.28);
+      background: linear-gradient(180deg, #fffefa, #fff7f3);
+    }
+
+    .formula-panel,
+    .transition-panel,
+    .benchmark-panel,
+    .note,
+    .chart-panel,
+    .table-panel {
+      padding: 18px;
+      margin-top: 18px;
+    }
+
+    .formula-panel {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .formula-main {
+      margin: 0;
+      font-size: clamp(1.08rem, 2vw, 1.35rem);
+      font-weight: 900;
+    }
+
+    .formula-sub {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .formula-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 84px;
+      min-height: 54px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      background: var(--green-soft);
+      color: var(--green);
+      font-weight: 900;
+      font-size: 1.25rem;
+    }
+
+    .chart-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .chart-head p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .chart-wrap {
+      position: relative;
+      width: 100%;
+      height: 360px;
+    }
+
+    .chart-wrap canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .transition-panel {
+      border-color: rgba(61, 113, 87, 0.26);
+      background: linear-gradient(180deg, rgba(255, 254, 250, 0.95), rgba(237, 247, 241, 0.72));
+    }
+
+    .transition-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(240px, 0.9fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .transition-status {
+      margin: 0;
+      font-size: clamp(1.05rem, 2vw, 1.28rem);
+      font-weight: 900;
+    }
+
+    .transition-copy {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .transition-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .mini-metric {
+      padding: 11px;
+      border: 1px solid rgba(222, 216, 204, 0.82);
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .mini-metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 800;
+    }
+
+    .mini-metric strong {
+      display: block;
+      margin-top: 3px;
+      color: var(--text);
+      font-size: 1.08rem;
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    .transition-list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .transition-list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border: 1px solid rgba(222, 216, 204, 0.82);
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.72);
+      font-weight: 800;
+    }
+
+    .transition-list span {
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 800;
+    }
+
+    .transition-list strong {
+      white-space: nowrap;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface-strong);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      min-width: 720px;
+      font-size: 0.92rem;
+    }
+
+    th,
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(222, 216, 204, 0.7);
+      text-align: right;
+    }
+
+    td {
+      white-space: nowrap;
+    }
+
+    th:first-child,
+    td:first-child {
+      text-align: left;
+      font-weight: 900;
+    }
+
+    th {
+      background: #fbfaf6;
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.25;
+      text-transform: uppercase;
+      letter-spacing: 0;
+      white-space: normal;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    tbody tr.is-current td {
+      background: var(--blue-soft);
+      color: #244d69;
+      font-weight: 900;
+    }
+
+    .note {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      align-items: start;
+      border-color: rgba(139, 101, 30, 0.28);
+      background: var(--warning-soft);
+      box-shadow: none;
+    }
+
+    .note-icon {
+      font-size: 1.4rem;
+      line-height: 1;
+    }
+
+    .note p,
+    .benchmark-panel p {
+      margin: 0;
+      color: var(--text);
+      font-weight: 750;
+    }
+
+    .benchmark-panel {
+      border-color: rgba(66, 106, 137, 0.24);
+      background: var(--blue-soft);
+      box-shadow: none;
+    }
+
+    .benchmark-panel strong {
+      color: #244d69;
+    }
+
+    .footer-space {
+      height: 4px;
+    }
+
+    @media (max-width: 1040px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        position: static;
+      }
+
+      .results-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        width: min(100% - 20px, var(--max-width));
+        padding: 18px 0 32px;
+      }
+
+      .header {
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
+
+      .header-badge {
+        justify-self: start;
+      }
+
+      .results-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .card {
+        min-height: 112px;
+      }
+
+      .control-row {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .unit-input {
+        width: 100%;
+      }
+
+      .formula-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .transition-layout,
+      .transition-metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .formula-chip {
+        justify-self: start;
+      }
+
+      .chart-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .chart-wrap {
+        height: 320px;
+      }
+
+      .meal-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .phase-option span {
+        justify-content: flex-start;
+        text-align: left;
+      }
+    }
+
+    @media (max-width: 390px) {
+      .meal-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media print {
+      :root {
+        --bg: #ffffff;
+        --surface: #ffffff;
+        --surface-strong: #ffffff;
+        --text: #111111;
+        --muted: #444444;
+        --border: #cfcfcf;
+        --shadow: none;
+      }
+
+      body {
+        background: #ffffff;
+      }
+
+      .page {
+        width: 100%;
+        padding: 0;
+      }
+
+      .header,
+      .dashboard-grid,
+      .results-grid {
+        display: block;
+      }
+
+      .header-badge,
+      .panel,
+      input,
+      .segmented,
+      .meal-grid,
+      .range-labels {
+        display: none !important;
+      }
+
+      .card,
+      .formula-panel,
+      .transition-panel,
+      .benchmark-panel,
+      .note,
+      .chart-panel,
+      .table-panel {
+        break-inside: avoid;
+        margin: 10px 0;
+        border: 1px solid #cfcfcf;
+        box-shadow: none;
+        background: #ffffff;
+      }
+
+      .card {
+        min-height: auto;
+      }
+
+      .chart-wrap {
+        height: 300px;
+      }
+
+      table {
+        min-width: 0;
+        font-size: 0.75rem;
+      }
+
+      th,
+      td {
+        padding: 7px 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <div class="title-block">
+        <h1>Калькулятор BARF для Поршика</h1>
+        <p>Расчёт дневной нормы корма по весу, возрасту и цене</p>
+      </div>
+      <div class="header-badge" aria-label="Поршик, Вельш-корги пемброк">
+        <span>🐶</span>
+        <span>Вельш-корги пемброк</span>
+      </div>
+    </header>
+
+    <div class="dashboard-grid">
+      <aside class="panel" aria-label="Параметры расчёта">
+        <h2>Параметры</h2>
+
+        <section class="control">
+          <div class="control-row">
+            <label for="weightRange">Текущий вес</label>
+            <div class="unit-input">
+              <input id="weightInput" type="number" min="1" max="15" step="0.1" value="3.1" inputmode="decimal" aria-label="Текущий вес в килограммах">
+              <span>кг</span>
+            </div>
+          </div>
+          <input id="weightRange" type="range" min="1" max="15" step="0.1" value="3.1" aria-label="Слайдер веса">
+          <div class="range-labels">
+            <span>1 кг</span>
+            <span>15 кг</span>
+          </div>
+        </section>
+
+        <section class="control">
+          <div class="control-row">
+            <label for="ageRange">Возраст Поршика</label>
+            <div class="unit-input">
+              <input id="ageInput" type="number" min="2" max="12" step="0.1" value="4.0" inputmode="decimal" aria-label="Возраст Поршика в месяцах">
+              <span>мес.</span>
+            </div>
+          </div>
+          <input id="ageRange" type="range" min="2" max="12" step="0.1" value="4.0" aria-label="Слайдер возраста">
+          <div class="range-labels">
+            <span>2 мес.</span>
+            <span>7–8 мес.</span>
+            <span>12 мес.</span>
+          </div>
+        </section>
+
+        <section class="control">
+          <div class="control-row">
+            <label for="adultWeightRange">Ожидаемый взрослый вес</label>
+            <div class="unit-input">
+              <input id="adultWeightInput" type="number" min="8" max="16" step="0.1" value="11.5" inputmode="decimal" aria-label="Ожидаемый взрослый вес в килограммах">
+              <span>кг</span>
+            </div>
+          </div>
+          <input id="adultWeightRange" type="range" min="8" max="16" step="0.1" value="11.5" aria-label="Слайдер ожидаемого взрослого веса">
+          <div class="range-labels">
+            <span>8 кг</span>
+            <span>10–12 кг</span>
+            <span>16 кг</span>
+          </div>
+          <p class="control-hint">Нужен только как прогноз: если заводчица или ветеринар дадут другую цель, поменяйте это число.</p>
+        </section>
+
+        <section class="control">
+          <div class="label">Возраст / фаза кормления</div>
+          <div class="segmented" role="radiogroup" aria-label="Возраст и фаза кормления">
+            <label class="phase-option">
+              <input type="radio" name="phase" value="puppy" checked>
+              <span>Щенок до 7–8 месяцев — 8% веса</span>
+            </label>
+            <label class="phase-option">
+              <input type="radio" name="phase" value="adult">
+              <span>После 8 месяцев / взрослый — 3% веса</span>
+            </label>
+          </div>
+        </section>
+
+        <section class="control">
+          <div class="label">Плавность перехода на 3%</div>
+          <div class="meal-grid" role="radiogroup" aria-label="Количество недель для плавного перехода">
+            <label class="meal-option">
+              <input type="radio" name="transitionWeeks" value="2">
+              <span>2 нед.</span>
+            </label>
+            <label class="meal-option">
+              <input type="radio" name="transitionWeeks" value="3" checked>
+              <span>3 нед.</span>
+            </label>
+            <label class="meal-option">
+              <input type="radio" name="transitionWeeks" value="4">
+              <span>4 нед.</span>
+            </label>
+          </div>
+        </section>
+
+        <section class="control">
+          <div class="label">Приёмов пищи в день</div>
+          <div class="meal-grid" role="radiogroup" aria-label="Количество приёмов пищи в день">
+            <label class="meal-option">
+              <input type="radio" name="meals" value="2">
+              <span>2</span>
+            </label>
+            <label class="meal-option">
+              <input type="radio" name="meals" value="3" checked>
+              <span>3</span>
+            </label>
+            <label class="meal-option">
+              <input type="radio" name="meals" value="4">
+              <span>4</span>
+            </label>
+          </div>
+        </section>
+
+        <section class="control">
+          <div class="control-row">
+            <label for="priceInput">Цена BARF</label>
+            <div class="unit-input">
+              <input id="priceInput" type="number" min="0.01" step="0.1" value="6" inputmode="decimal" aria-label="Цена BARF за килограмм">
+              <span>€/кг</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="control">
+          <div class="control-row">
+            <label for="daysInput">Дней в месяце</label>
+            <div class="unit-input">
+              <input id="daysInput" type="number" min="28" max="31" step="1" value="30" inputmode="numeric" aria-label="Количество дней в месяце">
+              <span>дн.</span>
+            </div>
+          </div>
+        </section>
+      </aside>
+
+      <section aria-label="Результаты расчёта">
+        <div class="results-grid">
+          <article class="card accent-card">
+            <div class="card-label">🥩 BARF в день</div>
+            <div class="card-value"><span id="dailyGrams">248</span> <span class="suffix">г</span></div>
+            <div class="card-note" id="dailyNote">8% от текущего веса</div>
+          </article>
+
+          <article class="card">
+            <div class="card-label">BARF за один приём</div>
+            <div class="card-value"><span id="mealGrams">83</span> <span class="suffix">г</span></div>
+            <div class="card-note" id="mealNote">3 приёма в день</div>
+          </article>
+
+          <article class="card">
+            <div class="card-label">BARF в месяц</div>
+            <div class="card-value"><span id="monthlyKg">7,4</span> <span class="suffix">кг</span></div>
+            <div class="card-note" id="monthNote">за 30 дней</div>
+          </article>
+
+          <article class="card">
+            <div class="card-label">Стоимость в месяц</div>
+            <div class="card-value"><span id="monthlyCost">44,64</span> <span class="suffix">€</span></div>
+            <div class="card-note" id="priceNote">при 6.00 €/кг</div>
+          </article>
+
+          <article class="card">
+            <div class="card-label">Стоимость в год</div>
+            <div class="card-value"><span id="yearlyCost">543,12</span> <span class="suffix">€</span></div>
+            <div class="card-note">365 дней кормления</div>
+          </article>
+        </div>
+
+        <section class="formula-panel" aria-label="Формула расчёта">
+          <div>
+            <p class="formula-main" id="formulaText">Формула: вес × 8% = дневная норма BARF</p>
+            <p class="formula-sub">Пересчитывать желательно каждую неделю по текущему весу.</p>
+          </div>
+          <div class="formula-chip" id="phaseChip">8%</div>
+        </section>
+
+        <section class="chart-panel" aria-label="График нормы BARF">
+          <div class="chart-head">
+            <div>
+              <h2 class="section-title">📊 Норма BARF по весу</h2>
+              <p>Голубая зона — примерный вес к 7–8 месяцам, точки — текущий вес, пунктир — переход от 8% к 3%.</p>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="barfChart" aria-label="График BARF граммов в день по весу собаки"></canvas>
+          </div>
+        </section>
+
+        <section class="transition-panel" aria-label="Переход с щенячьей нормы на взрослую">
+          <div class="transition-layout">
+            <div>
+              <h2 class="section-title">Когда переходить на 3%</h2>
+              <p class="transition-status" id="transitionStatus">Сейчас щенячья фаза: держим 8%.</p>
+              <p class="transition-copy" id="transitionCopy">Ориентир перехода — примерно 7–8 месяцев и признаки полового созревания. Переключаться лучше постепенно, наблюдая за формой тела и стулом.</p>
+              <div class="transition-metrics">
+                <div class="mini-metric">
+                  <span>Вес к 7–8 мес.</span>
+                  <strong id="targetWeightRange">9,2–10,4 кг</strong>
+                </div>
+                <div class="mini-metric">
+                  <span>До нижней границы</span>
+                  <strong id="targetWeightGap">+6,1 кг</strong>
+                </div>
+                <div class="mini-metric">
+                  <span>Щенячья норма</span>
+                  <strong id="puppyTransitionGrams">248 г/день</strong>
+                </div>
+                <div class="mini-metric">
+                  <span>Взрослая норма</span>
+                  <strong id="adultTransitionGrams">93 г/день</strong>
+                </div>
+                <div class="mini-metric">
+                  <span>Разница</span>
+                  <strong id="transitionDifference">−155 г/день</strong>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h3 class="section-title">Практический переход</h3>
+              <ul class="transition-list" id="transitionPlan"></ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="table-panel" aria-label="Сравнение формул">
+          <h2 class="section-title">Сравнение щенячьей и взрослой формулы</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Вес</th>
+                  <th>Щенок 8%, г/день</th>
+                  <th>Взрослый 3%, г/день</th>
+                  <th>Щенок 8%, кг/месяц</th>
+                  <th>Взрослый 3%, кг/месяц</th>
+                </tr>
+              </thead>
+              <tbody id="comparisonBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="note" aria-label="Практическая рекомендация">
+          <div class="note-icon" aria-hidden="true">ℹ️</div>
+          <p>Это ориентировочный расчёт по рекомендации заводчицы. Реальную порцию нужно корректировать по активности, стулу, аппетиту и форме тела. Рёбра должны прощупываться, но не торчать.</p>
+        </section>
+
+        <section class="benchmark-panel" aria-label="Текущий ориентир">
+          <p><strong>Текущий ориентир:</strong> 250 г/день ≈ 7,5 кг/месяц ≈ 45 € / месяц при цене 6 €/кг.</p>
+        </section>
+      </section>
+    </div>
+
+    <div class="footer-space" aria-hidden="true"></div>
+  </main>
+
+  <script>
+    const state = {
+      weight: 3.1,
+      ageMonths: 4,
+      expectedAdultWeight: 11.5,
+      phase: "puppy",
+      transitionWeeks: 3,
+      meals: 3,
+      price: 6,
+      days: 30
+    };
+
+    const refs = {
+      weightRange: document.getElementById("weightRange"),
+      weightInput: document.getElementById("weightInput"),
+      ageRange: document.getElementById("ageRange"),
+      ageInput: document.getElementById("ageInput"),
+      adultWeightRange: document.getElementById("adultWeightRange"),
+      adultWeightInput: document.getElementById("adultWeightInput"),
+      priceInput: document.getElementById("priceInput"),
+      daysInput: document.getElementById("daysInput"),
+      dailyGrams: document.getElementById("dailyGrams"),
+      mealGrams: document.getElementById("mealGrams"),
+      monthlyKg: document.getElementById("monthlyKg"),
+      monthlyCost: document.getElementById("monthlyCost"),
+      yearlyCost: document.getElementById("yearlyCost"),
+      dailyNote: document.getElementById("dailyNote"),
+      mealNote: document.getElementById("mealNote"),
+      monthNote: document.getElementById("monthNote"),
+      priceNote: document.getElementById("priceNote"),
+      formulaText: document.getElementById("formulaText"),
+      phaseChip: document.getElementById("phaseChip"),
+      transitionStatus: document.getElementById("transitionStatus"),
+      transitionCopy: document.getElementById("transitionCopy"),
+      targetWeightRange: document.getElementById("targetWeightRange"),
+      targetWeightGap: document.getElementById("targetWeightGap"),
+      puppyTransitionGrams: document.getElementById("puppyTransitionGrams"),
+      adultTransitionGrams: document.getElementById("adultTransitionGrams"),
+      transitionDifference: document.getElementById("transitionDifference"),
+      transitionPlan: document.getElementById("transitionPlan"),
+      comparisonBody: document.getElementById("comparisonBody"),
+      chartCanvas: document.getElementById("barfChart")
+    };
+
+    const commonWeights = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+    const chartWeights = Array.from({ length: 141 }, (_, index) => Number((1 + index * 0.1).toFixed(1)));
+
+    function clampNumber(value, min, max, fallback) {
+      const parsed = Number.parseFloat(String(value).replace(",", "."));
+
+      if (!Number.isFinite(parsed)) {
+        return fallback;
+      }
+
+      return Math.min(max, Math.max(min, parsed));
+    }
+
+    function roundToStep(value, step) {
+      return Math.round(value / step) * step;
+    }
+
+    function gramsFor(weightKg, ratio) {
+      return weightKg * 1000 * ratio;
+    }
+
+    function getTargetWeightRange() {
+      return {
+        month7: state.expectedAdultWeight * 0.8,
+        month8: state.expectedAdultWeight * 0.9
+      };
+    }
+
+    function formatSignedKg(value) {
+      const sign = value > 0 ? "+" : "";
+
+      return `${sign}${formatOneDecimal(value)} кг`;
+    }
+
+    function formatInteger(value) {
+      return Math.round(value).toLocaleString("ru-RU");
+    }
+
+    function formatOneDecimal(value) {
+      return value.toLocaleString("ru-RU", {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1
+      });
+    }
+
+    function formatMoney(value) {
+      return value.toLocaleString("ru-RU", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function getActiveRatio() {
+      return state.phase === "puppy" ? 0.08 : 0.03;
+    }
+
+    function syncControls() {
+      refs.weightRange.value = state.weight.toFixed(1);
+      refs.weightInput.value = state.weight.toFixed(1);
+      refs.ageRange.value = state.ageMonths.toFixed(1);
+      refs.ageInput.value = state.ageMonths.toFixed(1);
+      refs.adultWeightRange.value = state.expectedAdultWeight.toFixed(1);
+      refs.adultWeightInput.value = state.expectedAdultWeight.toFixed(1);
+      refs.priceInput.value = state.price.toString();
+      refs.daysInput.value = state.days.toString();
+
+      document.querySelectorAll('input[name="phase"]').forEach((input) => {
+        input.checked = input.value === state.phase;
+      });
+
+      document.querySelectorAll('input[name="meals"]').forEach((input) => {
+        input.checked = Number(input.value) === state.meals;
+      });
+
+      document.querySelectorAll('input[name="transitionWeeks"]').forEach((input) => {
+        input.checked = Number(input.value) === state.transitionWeeks;
+      });
+    }
+
+    function calculateValues(weight = state.weight, ratio = getActiveRatio(), days = state.days, price = state.price, meals = state.meals) {
+      const dailyGrams = gramsFor(weight, ratio);
+      const mealGrams = dailyGrams / meals;
+      const monthlyKg = (dailyGrams * days) / 1000;
+      const monthlyCost = monthlyKg * price;
+      const yearlyCost = (dailyGrams * 365 / 1000) * price;
+
+      return {
+        dailyGrams,
+        mealGrams,
+        monthlyKg,
+        monthlyCost,
+        yearlyCost
+      };
+    }
+
+    function updateResults() {
+      const ratio = getActiveRatio();
+      const values = calculateValues();
+      const percent = ratio === 0.08 ? "8%" : "3%";
+
+      refs.dailyGrams.textContent = formatInteger(values.dailyGrams);
+      refs.mealGrams.textContent = formatInteger(values.mealGrams);
+      refs.monthlyKg.textContent = formatOneDecimal(values.monthlyKg);
+      refs.monthlyCost.textContent = formatMoney(values.monthlyCost);
+      refs.yearlyCost.textContent = formatMoney(values.yearlyCost);
+
+      refs.dailyNote.textContent = `${percent} от текущего веса`;
+      refs.mealNote.textContent = `${state.meals} ${mealWord(state.meals)} в день`;
+      refs.monthNote.textContent = `за ${state.days} ${dayWord(state.days)}`;
+      refs.priceNote.textContent = `при ${formatMoney(state.price)} €/кг`;
+      refs.formulaText.textContent = ratio === 0.08
+        ? "Формула: вес × 8% = дневная норма BARF"
+        : "Формула: вес × 3% = дневная норма BARF";
+      refs.phaseChip.textContent = percent;
+    }
+
+    function getAgePhaseText() {
+      if (state.ageMonths < 7) {
+        return {
+          status: "Сейчас щенячья фаза: держим 8%.",
+          copy: "До 7 месяцев обычно ориентируются на щенячью норму. Главное — пересчитывать вес каждую неделю и смотреть на форму тела."
+        };
+      }
+
+      if (state.ageMonths < 8) {
+        return {
+          status: "Сейчас зона перехода: 7–8 месяцев.",
+          copy: "Это не дата с резким переключением. В этой зоне уже можно планировать плавное снижение от 8% к 3%, если Поршик созревает и форма тела остаётся хорошей."
+        };
+      }
+
+      return {
+        status: "После 8 месяцев: обычно переходят к 3%.",
+        copy: "После 8 месяцев или при признаках полового созревания взрослую норму лучше вводить постепенно, за несколько недель, а не одним днём."
+      };
+    }
+
+    function buildTransitionPlan() {
+      const puppyDaily = gramsFor(state.weight, 0.08);
+      const adultDaily = gramsFor(state.weight, 0.03);
+      const difference = puppyDaily - adultDaily;
+      const target = getTargetWeightRange();
+      const targetGap = target.month7 - state.weight;
+      const ageText = getAgePhaseText();
+      const rows = [];
+
+      refs.transitionStatus.textContent = ageText.status;
+      refs.transitionCopy.textContent = ageText.copy;
+      refs.targetWeightRange.textContent = `${formatOneDecimal(target.month7)}–${formatOneDecimal(target.month8)} кг`;
+      refs.targetWeightGap.textContent = targetGap > 0
+        ? formatSignedKg(targetGap)
+        : "уже в зоне";
+      refs.puppyTransitionGrams.textContent = `${formatInteger(puppyDaily)} г/день`;
+      refs.adultTransitionGrams.textContent = `${formatInteger(adultDaily)} г/день`;
+      refs.transitionDifference.textContent = `−${formatInteger(difference)} г/день`;
+
+      for (let week = 1; week <= state.transitionWeeks; week += 1) {
+        const ratio = week / state.transitionWeeks;
+        const plannedDaily = puppyDaily - difference * ratio;
+        rows.push(`
+          <li>
+            <span>${week}-я неделя</span>
+            <strong>${formatInteger(plannedDaily)} г/день</strong>
+          </li>
+        `);
+      }
+
+      refs.transitionPlan.innerHTML = rows.join("");
+    }
+
+    function mealWord(value) {
+      return value === 2 ? "приёма" : "приёма";
+    }
+
+    function dayWord(value) {
+      return value === 31 ? "день" : "дней";
+    }
+
+    function buildComparisonTable() {
+      const nearestWeight = Math.round(state.weight);
+
+      refs.comparisonBody.innerHTML = commonWeights.map((weight) => {
+        const puppyDaily = gramsFor(weight, 0.08);
+        const adultDaily = gramsFor(weight, 0.03);
+        const puppyMonth = puppyDaily * state.days / 1000;
+        const adultMonth = adultDaily * state.days / 1000;
+        const currentClass = nearestWeight === weight ? " class=\"is-current\"" : "";
+
+        return `
+          <tr${currentClass}>
+            <td>${weight} кг</td>
+            <td>${formatInteger(puppyDaily)} г</td>
+            <td>${formatInteger(adultDaily)} г</td>
+            <td>${formatOneDecimal(puppyMonth)} кг</td>
+            <td>${formatOneDecimal(adultMonth)} кг</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function drawRoundedRect(ctx, x, y, width, height, radius) {
+      const r = Math.min(radius, width / 2, height / 2);
+
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + width - r, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+      ctx.lineTo(x + width, y + height - r);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+      ctx.lineTo(x + r, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    function drawTextBox(ctx, text, x, y, color, background, border, bounds) {
+      ctx.font = "700 12px Inter, system-ui, sans-serif";
+      const width = Math.min(ctx.measureText(text).width + 18, bounds.right - bounds.left - 12);
+      const height = 28;
+      const safeX = Math.min(Math.max(x, bounds.left + 6), bounds.right - width - 6);
+      const safeY = Math.min(Math.max(y, bounds.top + 6), bounds.bottom - height - 6);
+
+      ctx.save();
+      ctx.fillStyle = background;
+      ctx.strokeStyle = border;
+      ctx.lineWidth = 1;
+      drawRoundedRect(ctx, safeX, safeY, width, height, 6);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.fillText(text, safeX + 9, safeY + 18, width - 18);
+      ctx.restore();
+    }
+
+    function drawLine(ctx, points, xFor, yFor, color, width, dash = []) {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.setLineDash(dash);
+      ctx.beginPath();
+
+      points.forEach((point, index) => {
+        const x = xFor(point.x);
+        const y = yFor(point.y);
+
+        if (index === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      });
+
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawPoint(ctx, x, y, color) {
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(x, y, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawLegend(ctx, chartArea, width) {
+      const items = [
+        { label: "Щенок: 8%", color: "#b8543d", type: "circle" },
+        { label: "Взрослый: 3%", color: "#3d7157", type: "circle" },
+        { label: "Переход 8% → 3%", color: "#8b651e", type: "dash" }
+      ];
+      const totalWidth = 355;
+      let x = Math.max(chartArea.left, (width - totalWidth) / 2);
+      const y = chartArea.bottom + 42;
+
+      ctx.save();
+      ctx.font = "700 12px Inter, system-ui, sans-serif";
+      ctx.fillStyle = "#25221d";
+
+      items.forEach((item) => {
+        if (item.type === "dash") {
+          ctx.strokeStyle = item.color;
+          ctx.lineWidth = 3;
+          ctx.setLineDash([6, 5]);
+          ctx.beginPath();
+          ctx.moveTo(x, y - 4);
+          ctx.lineTo(x + 14, y - 4);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        } else {
+          ctx.strokeStyle = item.color;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(x + 7, y - 4, 5, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        ctx.fillText(item.label, x + 20, y);
+        x += ctx.measureText(item.label).width + 42;
+      });
+
+      ctx.restore();
+    }
+
+    function drawBarfChart() {
+      const canvas = refs.chartCanvas;
+      const ctx = canvas.getContext("2d");
+      const rect = canvas.getBoundingClientRect();
+      const pixelRatio = window.devicePixelRatio || 1;
+      const width = Math.max(320, rect.width);
+      const height = Math.max(280, rect.height);
+      const chartArea = {
+        left: width < 520 ? 56 : 72,
+        right: width - 28,
+        top: 44,
+        bottom: height - 72
+      };
+      const xMin = 1;
+      const xMax = 15;
+      const yMin = 0;
+      const yMax = 1200;
+      const xFor = (value) => chartArea.left + ((value - xMin) / (xMax - xMin)) * (chartArea.right - chartArea.left);
+      const yFor = (value) => chartArea.bottom - ((value - yMin) / (yMax - yMin)) * (chartArea.bottom - chartArea.top);
+      const puppyData = chartWeights.map((weight) => ({ x: weight, y: gramsFor(weight, 0.08) }));
+      const adultData = chartWeights.map((weight) => ({ x: weight, y: gramsFor(weight, 0.03) }));
+      const target = getTargetWeightRange();
+      const targetLeft = xFor(target.month7);
+      const targetRight = xFor(target.month8);
+      const currentX = xFor(state.weight);
+      const puppyY = yFor(gramsFor(state.weight, 0.08));
+      const adultY = yFor(gramsFor(state.weight, 0.03));
+
+      canvas.width = Math.round(width * pixelRatio);
+      canvas.height = Math.round(height * pixelRatio);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+
+      ctx.save();
+      ctx.fillStyle = "#fffefa";
+      ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = "rgba(66, 106, 137, 0.12)";
+      ctx.fillRect(targetLeft, chartArea.top, targetRight - targetLeft, chartArea.bottom - chartArea.top);
+      ctx.strokeStyle = "rgba(66, 106, 137, 0.32)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(targetLeft, chartArea.top);
+      ctx.lineTo(targetLeft, chartArea.bottom);
+      ctx.moveTo(targetRight, chartArea.top);
+      ctx.lineTo(targetRight, chartArea.bottom);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(222, 216, 204, 0.75)";
+      ctx.lineWidth = 1;
+      ctx.font = "700 11px Inter, system-ui, sans-serif";
+      ctx.fillStyle = "#6e675c";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+
+      for (let y = 0; y <= 1200; y += 200) {
+        const py = yFor(y);
+        ctx.beginPath();
+        ctx.moveTo(chartArea.left, py);
+        ctx.lineTo(chartArea.right, py);
+        ctx.stroke();
+        ctx.fillText(`${y} г`, chartArea.left - 8, py);
+      }
+
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+
+      for (let x = 1; x <= 15; x += 1) {
+        const px = xFor(x);
+        ctx.beginPath();
+        ctx.moveTo(px, chartArea.top);
+        ctx.lineTo(px, chartArea.bottom);
+        ctx.stroke();
+        ctx.fillText(String(x), px, chartArea.bottom + 8);
+      }
+
+      ctx.restore();
+
+      drawLine(ctx, puppyData, xFor, yFor, "#b8543d", 3);
+      drawLine(ctx, adultData, xFor, yFor, "#3d7157", 3);
+      drawLine(ctx, [
+        { x: state.weight, y: gramsFor(state.weight, 0.08) },
+        { x: state.weight, y: gramsFor(state.weight, 0.03) }
+      ], xFor, yFor, "#8b651e", 2, [6, 6]);
+      drawPoint(ctx, currentX, puppyY, "#8f3626");
+      drawPoint(ctx, currentX, adultY, "#24523b");
+
+      ctx.save();
+      ctx.fillStyle = "#6e675c";
+      ctx.font = "800 12px Inter, system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("Вес собаки, кг", (chartArea.left + chartArea.right) / 2, height - 28);
+      ctx.translate(17, (chartArea.top + chartArea.bottom) / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText("BARF, г/день", 0, 0);
+      ctx.restore();
+
+      drawTextBox(
+        ctx,
+        `вес к 7–8 мес.: ${formatOneDecimal(target.month7)}–${formatOneDecimal(target.month8)} кг`,
+        xFor((target.month7 + target.month8) / 2) - 70,
+        chartArea.top + 10,
+        "#244d69",
+        "rgba(238, 246, 251, 0.96)",
+        "rgba(66, 106, 137, 0.38)",
+        chartArea
+      );
+      drawTextBox(
+        ctx,
+        "7–8 мес.: снижать плавно",
+        currentX + 12,
+        (puppyY + adultY) / 2 - 14,
+        "#6f4e13",
+        "rgba(255, 247, 223, 0.94)",
+        "rgba(139, 101, 30, 0.38)",
+        chartArea
+      );
+      drawLegend(ctx, chartArea, width);
+    }
+
+    function createChart() {
+      drawBarfChart();
+      window.addEventListener("resize", drawBarfChart);
+    }
+
+    function updateChartMarkers() {
+      drawBarfChart();
+    }
+
+    function updateAll() {
+      syncControls();
+      updateResults();
+      buildTransitionPlan();
+      buildComparisonTable();
+      updateChartMarkers();
+    }
+
+    refs.weightRange.addEventListener("input", (event) => {
+      state.weight = roundToStep(clampNumber(event.target.value, 1, 15, state.weight), 0.1);
+      refs.weightInput.value = state.weight.toFixed(1);
+      updateAll();
+    });
+
+    refs.weightInput.addEventListener("input", (event) => {
+      state.weight = roundToStep(clampNumber(event.target.value, 1, 15, 1), 0.1);
+      updateAll();
+    });
+
+    refs.ageRange.addEventListener("input", (event) => {
+      state.ageMonths = roundToStep(clampNumber(event.target.value, 2, 12, state.ageMonths), 0.1);
+      refs.ageInput.value = state.ageMonths.toFixed(1);
+      updateAll();
+    });
+
+    refs.ageInput.addEventListener("input", (event) => {
+      state.ageMonths = roundToStep(clampNumber(event.target.value, 2, 12, 4), 0.1);
+      updateAll();
+    });
+
+    refs.adultWeightRange.addEventListener("input", (event) => {
+      state.expectedAdultWeight = roundToStep(clampNumber(event.target.value, 8, 16, state.expectedAdultWeight), 0.1);
+      refs.adultWeightInput.value = state.expectedAdultWeight.toFixed(1);
+      updateAll();
+    });
+
+    refs.adultWeightInput.addEventListener("input", (event) => {
+      state.expectedAdultWeight = roundToStep(clampNumber(event.target.value, 8, 16, 11.5), 0.1);
+      updateAll();
+    });
+
+    refs.priceInput.addEventListener("input", (event) => {
+      state.price = clampNumber(event.target.value, 0.01, 1000, 6);
+      updateAll();
+    });
+
+    refs.daysInput.addEventListener("input", (event) => {
+      state.days = Math.round(clampNumber(event.target.value, 28, 31, 30));
+      updateAll();
+    });
+
+    document.querySelectorAll('input[name="phase"]').forEach((input) => {
+      input.addEventListener("change", (event) => {
+        state.phase = event.target.value;
+        updateAll();
+      });
+    });
+
+    document.querySelectorAll('input[name="transitionWeeks"]').forEach((input) => {
+      input.addEventListener("change", (event) => {
+        state.transitionWeeks = Number(event.target.value);
+        updateAll();
+      });
+    });
+
+    document.querySelectorAll('input[name="meals"]').forEach((input) => {
+      input.addEventListener("change", (event) => {
+        state.meals = Number(event.target.value);
+        updateAll();
+      });
+    });
+
+    window.addEventListener("load", () => {
+      createChart();
+      updateAll();
+    });
+  </script>
+</body>
+</html>
